@@ -117,3 +117,92 @@ func TestHandler_Get(t *testing.T) {
 		}
 	})
 }
+
+func TestHandler_Chat(t *testing.T) {
+	t.Run("should return 400 when 'User-ID' header is missing", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"to":"user2","message":"Hello!"}`))
+		rec := httptest.NewRecorder()
+
+		h := handler.New(&mockService{})
+		h.Chat(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected status 400, got %d", rec.Code)
+		}
+
+		expectedBody := "missing 'User-ID' header\n"
+		if rec.Body.String() != expectedBody {
+			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
+		}
+	})
+
+	t.Run("should return 400 when request body is invalid", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`invalid-json`))
+		req.Header.Set("User-ID", "user1")
+		rec := httptest.NewRecorder()
+
+		h := handler.New(&mockService{})
+		h.Chat(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("expected status 400, got %d", rec.Code)
+		}
+
+		expectedBody := "failed to decode request body\n"
+		if rec.Body.String() != expectedBody {
+			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
+		}
+	})
+
+	t.Run("should return 500 when service.Chat returns an error", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"to":"user2","message":"Hello!"}`))
+		req.Header.Set("User-ID", "user1")
+		rec := httptest.NewRecorder()
+
+		mockSvc := &mockService{
+			ChatFn: func(ctx context.Context, to, message string) error {
+				return errors.New("service error")
+			},
+		}
+
+		h := handler.New(mockSvc)
+		h.Chat(rec, req)
+
+		if rec.Code != http.StatusInternalServerError {
+			t.Fatalf("expected status 500, got %d", rec.Code)
+		}
+
+		expectedBody := "service error\n"
+		if rec.Body.String() != expectedBody {
+			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
+		}
+	})
+
+	t.Run("should return 201 when service.Chat succeeds", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"to":"user2","message":"Hello!"}`))
+		req.Header.Set("User-ID", "user1")
+		rec := httptest.NewRecorder()
+
+		mockSvc := &mockService{
+			ChatFn: func(ctx context.Context, to, message string) error {
+				return nil
+			},
+		}
+
+		h := handler.New(mockSvc)
+		h.Chat(rec, req)
+
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("expected status 201, got %d", rec.Code)
+		}
+
+		expectedBody := "message sent successfully"
+		if rec.Body.String() != expectedBody {
+			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
+		}
+
+		if rec.Header().Get("Content-Type") != "application/json" {
+			t.Fatalf("expected Content-Type 'application/json', got '%s'", rec.Header().Get("Content-Type"))
+		}
+	})
+}
