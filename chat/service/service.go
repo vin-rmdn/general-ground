@@ -31,3 +31,11 @@ func (s service) Get(ctx context.Context, to string) ([]chat.Chat, error) {
 
 	return chats, nil
 }
+
+func (s service) Chat(ctx context.Context, to, message string) error {
+	if err := s.repository.Save(ctx, to, message, time.Now()); err != nil {
+		return fmt.Errorf("failed to save chat: %v", err)
+	}
+
+	return nil
+}

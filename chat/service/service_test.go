@@ -91,3 +91,44 @@ func TestService_Get(t *testing.T) {
 		}
 	})
 }
+
+func TestService_Chat(t *testing.T) {
+	t.Run("should save chat successfully", func(t *testing.T) {
+		mockRepo := &mockRepository{
+			chats: map[string][]chat.Chat{},
+		}
+		svc := service.New(mockRepo)
+
+		ctx := context.WithValue(context.Background(), chat.FromKey{}, "user1")
+		err := svc.Chat(ctx, "user2", "Hello, user2!")
+		if err != nil {
+			t.Fatalf("failed to save chat: %v", err)
+		}
+
+		if len(mockRepo.chats["user2"]) != 1 {
+			t.Fatalf("expected 1 chat, got %d", len(mockRepo.chats["user2"]))
+		}
+
+		if mockRepo.chats["user2"][0].Message != "Hello, user2!" {
+			t.Fatalf("expected message 'Hello, user2!', got '%s'", mockRepo.chats["user2"][0].Message)
+		}
+	})
+
+	t.Run("should return error when repository Save fails", func(t *testing.T) {
+		mockRepo := &mockRepository{
+			err: errors.New("repository error"),
+		}
+		svc := service.New(mockRepo)
+
+		ctx := context.WithValue(context.Background(), chat.FromKey{}, "user1")
+		err := svc.Chat(ctx, "user2", "Hello, user2!")
+		if err == nil {
+			t.Fatalf("expected error, got nil")
+		}
+
+		expectedErr := "failed to save chat: repository error"
+		if err.Error() != expectedErr {
+			t.Fatalf("expected error '%s', got '%s'", expectedErr, err.Error())
+		}
+	})
+}
