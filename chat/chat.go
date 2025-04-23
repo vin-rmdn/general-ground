@@ -3,8 +3,8 @@ package chat
 import "time"
 
 type Chat struct {
-	From      string
-	To        string
-	Message   string
-	Timestamp time.Time
+	From      string    `json:"from"`
+	To        string    `json:"to"`
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
 }
