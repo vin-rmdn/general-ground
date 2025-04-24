@@ -3,6 +3,8 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/vin-rmdn/general-ground/chat"
@@ -23,13 +25,13 @@ func New(service service) handler {
 	}
 }
 
-func (h handler) Get(w http.ResponseWriter, r *http.Request) {
+func (h handler) Get(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	userID := r.Header.Get("User-ID")
 	if userID == "" {
 		http.Error(w, "missing 'User-ID' header", http.StatusBadRequest)
 
-		return
+		return errors.New("missing 'User-ID' header")
 	}
 
 	ctx = context.WithValue(ctx, chat.FromKey{}, userID)
@@ -38,14 +40,14 @@ func (h handler) Get(w http.ResponseWriter, r *http.Request) {
 	if otherUserID == "" {
 		http.Error(w, "missing 'with' query parameter", http.StatusBadRequest)
 
-		return
+		return errors.New("missing 'with' query parameter")
 	}
 
 	chats, err := h.service.Get(ctx, otherUserID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
-		return
+		return fmt.Errorf("failed to get chat: %v", err)
 	}
 
 	payload, err := json.Marshal(chats)
@@ -53,12 +55,14 @@ func (h handler) Get(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("failed to marshal response"))
 
-		return
+		return fmt.Errorf("failed to marshal response: %v", err)
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write(payload)
+
+	return nil
 }
 
 type chatRequest struct {
@@ -66,13 +70,13 @@ type chatRequest struct {
 	Message string `json:"message"`
 }
 
-func (h handler) Chat(w http.ResponseWriter, r *http.Request) {
+func (h handler) Chat(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
 	userID := r.Header.Get("User-ID")
 	if userID == "" {
 		http.Error(w, "missing 'User-ID' header", http.StatusBadRequest)
 
-		return
+		return errors.New("missing 'User-ID' header")
 	}
 
 	ctx = context.WithValue(ctx, chat.FromKey{}, userID)
@@ -81,16 +85,18 @@ func (h handler) Chat(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, "failed to decode request body", http.StatusBadRequest)
 
-		return
+		return fmt.Errorf("failed to decode request body: %v", err)
 	}
 
 	if err := h.service.Chat(ctx, payload.To, payload.Message); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
-		return
+		return fmt.Errorf("failed to send chat: %v", err)
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Add("Content-Type", "application/json")
 	_, _ = w.Write([]byte("message sent successfully"))
+
+	return nil
 }

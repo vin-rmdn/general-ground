@@ -10,6 +10,7 @@ import (
 	"github.com/vin-rmdn/general-ground/chat/handler"
 	"github.com/vin-rmdn/general-ground/chat/repository"
 	"github.com/vin-rmdn/general-ground/chat/service"
+	"github.com/vin-rmdn/general-ground/cmd/server/middleware"
 )
 
 func NewServer() {
@@ -23,8 +24,8 @@ func NewServer() {
 	chatService := service.New(chatRepository)
 	chatHandler := handler.New(chatService)
 
-	mux.HandleFunc("GET /chat", chatHandler.Get)
-	mux.HandleFunc("POST /chat", chatHandler.Chat)
+	mux.Handle("GET /chat", middleware.Wrap(chatHandler.Get))
+	mux.Handle("POST /chat", middleware.Wrap(chatHandler.Chat))
 
 	cert, err := tls.LoadX509KeyPair(
 		os.Getenv("CERTIFICATE_PATH"),
