@@ -24,25 +24,44 @@ func New(repository repository) service {
 	}
 }
 
-// Get retrieves chat messages for a specific recipient.
-// In my example, Get will be added with metrics directly in the code
+// Get is an exposed handler for getting messages.
+// In my example, Get will be added with metrics and logs directly in the code
 func (s service) Get(ctx context.Context, to string) ([]chat.Chat, error) {
 	from, _ := ctx.Value("user").(string)
-	slog.Debug("Get chat messages", slog.String("to", to), slog.String("from", from))
+	slog.Debug("get chat messages", slog.String("to", to), slog.String("from", from))
 
-	chats, err := s.repository.Get(ctx, to)
+	chats, err := s.get(ctx, to)
 	if err != nil {
 		slog.Error(
-			"Failed to get chat messages",
+			"failed to get chat messages",
 			slog.String("to", to),
 			slog.String("from", from),
 			slog.String("error", err.Error()),
 		)
 
-		return nil, fmt.Errorf("failed to get chats: %v", err)
+		return nil, fmt.Errorf("failed to get chat: %v", err)
 	}
 
-	slog.Debug("Successfully retrieved chat messages", slog.String("to", to), slog.String("from", from), slog.Any("chats", chats))
+	slog.Debug(
+		"successfully retrieved chat messages",
+		slog.String("to", to),
+		slog.String("from", from),
+		slog.Any("chats", chats),
+	)
+
+	return chats, nil
+}
+
+// get is a private method that retrieves chat messages for a specific recipient.
+// This method does not contain any logging or metrics and only contains business
+// logic.
+func (s service) get(ctx context.Context, to string) ([]chat.Chat, error) {
+	// TODO: do something else here, like enriching user data
+
+	chats, err := s.repository.Get(ctx, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get chats: %v", err)
+	}
 
 	return chats, nil
 }
