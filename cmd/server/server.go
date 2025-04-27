@@ -24,8 +24,8 @@ func NewServer() {
 	chatService := service.New(chatRepository)
 	chatHandler := handler.New(chatService)
 
-	mux.Handle("GET /chat", middleware.Wrap(chatHandler.Get))
-	mux.Handle("POST /chat", middleware.Wrap(chatHandler.Chat))
+	mux.Handle("GET /chat", middleware.Wrap(chatHandler.Get, middleware.Logger))
+	mux.Handle("POST /chat", middleware.Wrap(chatHandler.Chat, middleware.Logger))
 
 	cert, err := tls.LoadX509KeyPair(
 		os.Getenv("CERTIFICATE_PATH"),
