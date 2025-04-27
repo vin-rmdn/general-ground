@@ -3,10 +3,10 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/labstack/echo/v4"
 	"github.com/vin-rmdn/general-ground/chat"
 )
 
@@ -25,42 +25,31 @@ func New(service service) handler {
 	}
 }
 
-func (h handler) Get(w http.ResponseWriter, r *http.Request) error {
+func (h handler) Get(c echo.Context) error {
+	r := c.Request()
+
 	ctx := r.Context()
 	userID := r.Header.Get("User-ID")
 	if userID == "" {
-		http.Error(w, "missing 'User-ID' header", http.StatusBadRequest)
-
-		return errors.New("missing 'User-ID' header")
+		return c.String(http.StatusBadRequest, "missing 'User-ID' header")
 	}
 
 	ctx = context.WithValue(ctx, chat.FromKey{}, userID)
 
 	otherUserID := r.URL.Query().Get("with")
 	if otherUserID == "" {
-		http.Error(w, "missing 'with' query parameter", http.StatusBadRequest)
-
-		return errors.New("missing 'with' query parameter")
+		return c.String(http.StatusBadRequest, "missing 'with' query parameter")
 	}
 
 	chats, err := h.service.Get(ctx, otherUserID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		_ = c.String(http.StatusInternalServerError, fmt.Sprintf("failed to get chats: %v", err))
 
-		return fmt.Errorf("failed to get chat: %v", err)
+		return fmt.Errorf("failed to get chats: %w", err)
 	}
 
-	payload, err := json.Marshal(chats)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("failed to marshal response"))
-
-		return fmt.Errorf("failed to marshal response: %v", err)
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write(payload)
+	c.Response().Header().Add("Content-Type", "application/json")
+	_ = c.JSON(http.StatusOK, chats)
 
 	return nil
 }
@@ -70,33 +59,28 @@ type chatRequest struct {
 	Message string `json:"message"`
 }
 
-func (h handler) Chat(w http.ResponseWriter, r *http.Request) error {
+func (h handler) Chat(c echo.Context) error {
+	r := c.Request()
+
 	ctx := r.Context()
 	userID := r.Header.Get("User-ID")
 	if userID == "" {
-		http.Error(w, "missing 'User-ID' header", http.StatusBadRequest)
-
-		return errors.New("missing 'User-ID' header")
+		return c.String(http.StatusBadRequest, "missing 'User-ID' header")
 	}
 
 	ctx = context.WithValue(ctx, chat.FromKey{}, userID)
 
 	var payload chatRequest
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		http.Error(w, "failed to decode request body", http.StatusBadRequest)
-
-		return fmt.Errorf("failed to decode request body: %v", err)
+		return c.String(http.StatusBadRequest, "failed to decode request body")
 	}
 
 	if err := h.service.Chat(ctx, payload.To, payload.Message); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-
-		return fmt.Errorf("failed to send chat: %v", err)
+		return c.String(http.StatusInternalServerError, "failed to send chat")
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	w.Header().Add("Content-Type", "application/json")
-	_, _ = w.Write([]byte("message sent successfully"))
+	c.Response().Header().Add("Content-Type", "application/json")
+	_ = c.String(http.StatusCreated, "message sent successfully")
 
 	return nil
 }

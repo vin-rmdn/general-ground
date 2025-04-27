@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/labstack/echo/v4"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/vin-rmdn/general-ground/chat/handler"
 	"github.com/vin-rmdn/general-ground/chat/repository"
@@ -14,18 +15,21 @@ import (
 )
 
 func NewServer() {
-	mux := http.NewServeMux()
-	mux.Handle("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("pong\n"))
-	}))
+	router := echo.New()
+	
+	router.Use(middleware.Logger)
+	
+	router.GET("/ping", func(c echo.Context) error {
+		return c.String(http.StatusOK, "pong")
+	})
+	
 
 	chatRepository := repository.New()
 	chatService := service.New(chatRepository)
 	chatHandler := handler.New(chatService)
 
-	mux.Handle("GET /chat", middleware.Wrap(chatHandler.Get, middleware.Logger))
-	mux.Handle("POST /chat", middleware.Wrap(chatHandler.Chat, middleware.Logger))
+	router.GET("/chat", chatHandler.Get)
+	router.POST("/chat", chatHandler.Chat)
 
 	cert, err := tls.LoadX509KeyPair(
 		os.Getenv("CERTIFICATE_PATH"),
@@ -43,7 +47,7 @@ func NewServer() {
 			Certificates: []tls.Certificate{cert},
 			MinVersion:   tls.VersionTLS13,
 		}),
-		Handler:         mux,
+		Handler:         router,
 		EnableDatagrams: true,
 		Logger:          slog.Default(),
 	}

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/labstack/echo/v4"
 	"github.com/vin-rmdn/general-ground/chat"
 	"github.com/vin-rmdn/general-ground/chat/handler"
 )
@@ -27,17 +28,25 @@ func (m *mockService) Chat(ctx context.Context, to, message string) error {
 
 func TestHandler_Get(t *testing.T) {
 	t.Run("should return 400 when 'User-ID' header is missing", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/?with=user2", nil)
+		e := echo.New()
 		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/?with=user2", nil)
+		ctx := e.NewContext(req, rec)
+
+		ctx.SetPath("/chat")
+		ctx.Set("User-ID", "user1")
 
 		h := handler.New(&mockService{})
-		h.Get(rec, req)
+		err := h.Get(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected status 400, got %d", rec.Code)
 		}
 
-		expectedBody := "missing 'User-ID' header\n"
+		expectedBody := "missing 'User-ID' header"
 		if rec.Body.String() != expectedBody {
 			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
 		}
@@ -48,14 +57,17 @@ func TestHandler_Get(t *testing.T) {
 		req.Header.Set("User-ID", "user1")
 		rec := httptest.NewRecorder()
 
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+
 		h := handler.New(&mockService{})
-		h.Get(rec, req)
+		h.Get(ctx)
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected status 400, got %d", rec.Code)
 		}
 
-		expectedBody := "missing 'with' query parameter\n"
+		expectedBody := "missing 'with' query parameter"
 		if rec.Body.String() != expectedBody {
 			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
 		}
@@ -66,6 +78,11 @@ func TestHandler_Get(t *testing.T) {
 		req.Header.Set("User-ID", "user1")
 		rec := httptest.NewRecorder()
 
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/chat")
+		ctx.Set("User-ID", "user1")
+
 		mockSvc := &mockService{
 			GetFn: func(ctx context.Context, to string) ([]chat.Chat, error) {
 				return nil, errors.New("service error")
@@ -73,13 +90,16 @@ func TestHandler_Get(t *testing.T) {
 		}
 
 		h := handler.New(mockSvc)
-		h.Get(rec, req)
+		err := h.Get(ctx)
+		if err == nil {
+			t.Fatalf("expected no error, got nil")
+		}
 
 		if rec.Code != http.StatusInternalServerError {
 			t.Fatalf("expected status 500, got %d", rec.Code)
 		}
 
-		expectedBody := "service error\n"
+		expectedBody := "failed to get chats: service error"
 		if rec.Body.String() != expectedBody {
 			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
 		}
@@ -89,6 +109,11 @@ func TestHandler_Get(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/?with=user2", nil)
 		req.Header.Set("User-ID", "user1")
 		rec := httptest.NewRecorder()
+
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+		ctx.SetPath("/chat")
+		ctx.Set("User-ID", "user1")
 
 		mockChats := []chat.Chat{
 			{From: "user1", To: "user2", Message: "Hello, user2!"},
@@ -101,7 +126,10 @@ func TestHandler_Get(t *testing.T) {
 		}
 
 		h := handler.New(mockSvc)
-		h.Get(rec, req)
+		err := h.Get(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
 		if rec.Code != http.StatusOK {
 			t.Fatalf("expected status 200, got %d", rec.Code)
@@ -124,13 +152,19 @@ func TestHandler_Chat(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		h := handler.New(&mockService{})
-		h.Chat(rec, req)
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+
+		err := h.Chat(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected status 400, got %d", rec.Code)
 		}
 
-		expectedBody := "missing 'User-ID' header\n"
+		expectedBody := "missing 'User-ID' header"
 		if rec.Body.String() != expectedBody {
 			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
 		}
@@ -142,13 +176,19 @@ func TestHandler_Chat(t *testing.T) {
 		rec := httptest.NewRecorder()
 
 		h := handler.New(&mockService{})
-		h.Chat(rec, req)
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+
+		err := h.Chat(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected status 400, got %d", rec.Code)
 		}
 
-		expectedBody := "failed to decode request body\n"
+		expectedBody := "failed to decode request body"
 		if rec.Body.String() != expectedBody {
 			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
 		}
@@ -166,13 +206,19 @@ func TestHandler_Chat(t *testing.T) {
 		}
 
 		h := handler.New(mockSvc)
-		h.Chat(rec, req)
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+
+		err := h.Chat(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
 		if rec.Code != http.StatusInternalServerError {
 			t.Fatalf("expected status 500, got %d", rec.Code)
 		}
 
-		expectedBody := "service error\n"
+		expectedBody := "failed to send chat"
 		if rec.Body.String() != expectedBody {
 			t.Fatalf("expected body '%s', got '%s'", expectedBody, rec.Body.String())
 		}
@@ -190,7 +236,13 @@ func TestHandler_Chat(t *testing.T) {
 		}
 
 		h := handler.New(mockSvc)
-		h.Chat(rec, req)
+		e := echo.New()
+		ctx := e.NewContext(req, rec)
+
+		err := h.Chat(ctx)
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
 
 		if rec.Code != http.StatusCreated {
 			t.Fatalf("expected status 201, got %d", rec.Code)
