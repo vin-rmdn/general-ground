@@ -16,13 +16,12 @@ import (
 
 func NewServer() {
 	router := echo.New()
-	
+
 	router.Use(middleware.Logger, middleware.Recovery)
-	
+
 	router.GET("/ping", func(c echo.Context) error {
 		return c.String(http.StatusOK, "pong")
 	})
-	
 
 	chatRepository := repository.New()
 	chatService := service.New(chatRepository)
