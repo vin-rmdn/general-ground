@@ -21,5 +21,14 @@ func main() {
 
 	slog.SetDefault(logger)
 
-	server.NewServer()
+	instance, err := server.New()
+	if err != nil {
+		slog.Error("Failed to create server instance", "error", err)
+		os.Exit(1)
+	}
+
+	if err := instance.Start(); err != nil {
+		slog.Error("Failed to start server", "error", err)
+		os.Exit(1)
+}
 }
