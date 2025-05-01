@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/vin-rmdn/general-ground/chat"
+	"github.com/vin-rmdn/general-ground/internal/chat"
 )
 
 type repository interface {

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/vin-rmdn/general-ground/chat"
+	"github.com/vin-rmdn/general-ground/internal/chat"
 )
 
 type repository struct {

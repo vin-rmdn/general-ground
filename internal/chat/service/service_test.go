@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vin-rmdn/general-ground/chat"
-	"github.com/vin-rmdn/general-ground/chat/service"
+	"github.com/vin-rmdn/general-ground/internal/chat"
+	"github.com/vin-rmdn/general-ground/internal/chat/service"
 )
 
 type mockRepository struct {

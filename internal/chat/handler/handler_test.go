@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/labstack/echo/v4"
-	"github.com/vin-rmdn/general-ground/chat"
-	"github.com/vin-rmdn/general-ground/chat/handler"
+	"github.com/vin-rmdn/general-ground/internal/chat"
+	"github.com/vin-rmdn/general-ground/internal/chat/handler"
 )
 
 type mockService struct {
@@ -61,7 +61,7 @@ func TestHandler_Get(t *testing.T) {
 		ctx := e.NewContext(req, rec)
 
 		h := handler.New(&mockService{})
-		h.Get(ctx)
+		h.Get(ctx) // TODO: add error handling
 
 		if rec.Code != http.StatusBadRequest {
 			t.Fatalf("expected status 400, got %d", rec.Code)

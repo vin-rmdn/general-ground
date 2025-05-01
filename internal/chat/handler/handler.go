@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/vin-rmdn/general-ground/chat"
+	"github.com/vin-rmdn/general-ground/internal/chat"
 )
 
 type service interface {

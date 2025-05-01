@@ -7,9 +7,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/quic-go/quic-go/http3"
-	"github.com/vin-rmdn/general-ground/chat/handler"
-	"github.com/vin-rmdn/general-ground/chat/repository"
-	"github.com/vin-rmdn/general-ground/chat/service"
+	"github.com/vin-rmdn/general-ground/internal/chat/handler"
+	"github.com/vin-rmdn/general-ground/internal/chat/repository"
+	"github.com/vin-rmdn/general-ground/internal/chat/service"
 	"github.com/vin-rmdn/general-ground/cmd/server/middleware"
 )
 

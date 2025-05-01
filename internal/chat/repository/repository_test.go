@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vin-rmdn/general-ground/chat"
-	"github.com/vin-rmdn/general-ground/chat/repository"
+	"github.com/vin-rmdn/general-ground/internal/chat"
+	"github.com/vin-rmdn/general-ground/internal/chat/repository"
 )
 
 func TestRepository_Get(t *testing.T) {
@@ -25,7 +25,7 @@ func TestRepository_Get(t *testing.T) {
 			t.Fatalf("expected empty chats, got %v", chats)
 		}
 	})
-	
+
 	t.Run("should return empty chats when no chat exists", func(t *testing.T) {
 		repo := repository.New()
 		ctx := context.WithValue(context.Background(), chat.FromKey{}, "user1")
