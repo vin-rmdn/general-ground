@@ -1,34 +1,33 @@
 package main
 
 import (
-	"log/slog"
+	"context"
 	"os"
-	"time"
 
-	"github.com/lmittmann/tint"
+	"github.com/urfave/cli/v3"
 	"github.com/vin-rmdn/general-ground/cmd/server"
+	"github.com/vin-rmdn/general-ground/internal/version"
 )
 
 func main() {
-	logger := slog.New(
-		tint.NewHandler(os.Stdout, &tint.Options{
-			AddSource:  true,
-			Level:      slog.LevelDebug,
-			TimeFormat: time.StampMilli,
-			NoColor:    false,
-		}),
-	)
-
-	slog.SetDefault(logger)
-
-	instance, err := server.New()
-	if err != nil {
-		slog.Error("Failed to create server instance", "error", err)
-		os.Exit(1)
+	cmd := &cli.Command{
+		Name:                  "general_ground",
+		Aliases:               []string{"serve"},
+		Usage:                 "Service for a mock chatting platform",
+		UsageText:             "general_ground {command} [options]",
+		ArgsUsage:             "argsusage",
+		Version:               version.Version,
+		Description:           "Service for a mock chatting platform, complete with a server and a database migration tool, and many other features to come.",
+		DefaultCommand:        "defaultcommand",
+		Category:              "category",
+		Commands:              []*cli.Command{server.Command},
+		Flags:                 []cli.Flag{},
+		EnableShellCompletion: true,
+		Authors:               []any{"vin-rmdn"},
+		Suggest:               true,
 	}
 
-	if err := instance.Start(); err != nil {
-		slog.Error("Failed to start server", "error", err)
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		os.Exit(1)
-}
+	}
 }
