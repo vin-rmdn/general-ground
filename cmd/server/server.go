@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/quic-go/quic-go/http3"
@@ -18,20 +17,17 @@ type server struct {
 	server http3.Server
 }
 
-func New() (*server, error) {
+func New(certificatePath, certificateKeyPath string) (*server, error) {
 	router := echo.New()
 	router.Use(middleware.Logger, middleware.Recovery)
 
-	dependencies := setupDependencies()
+	dependencies := setupServerDependencies()
 
 	router.GET("/ping", ping)
 	router.GET("/chat", dependencies.chatHandler.Get)
 	router.POST("/chat", dependencies.chatHandler.Chat)
 
-	cert, err := tls.LoadX509KeyPair(
-		os.Getenv("CERTIFICATE_PATH"),
-		os.Getenv("KEY_PATH"),
-	)
+	cert, err := tls.LoadX509KeyPair(certificatePath, certificateKeyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load certificate: %w", err)
 	}
@@ -73,7 +69,7 @@ type dependencies struct {
 	logger      *slog.Logger
 }
 
-func setupDependencies() dependencies {
+func setupServerDependencies() dependencies {
 	chatRepository := repository.New()
 	chatService := service.New(chatRepository)
 

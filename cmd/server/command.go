@@ -8,23 +8,30 @@ import (
 	"time"
 
 	"github.com/lmittmann/tint"
+	"github.com/spf13/viper"
 	"github.com/urfave/cli/v3"
 	"github.com/vin-rmdn/general-ground/internal/version"
 )
 
 var Command = &cli.Command{
-	Name:                       "server",
-	Aliases:                    []string{"serve", "s"},
-	Usage:                      "Start a chat server",
-	UsageText:                  "general_ground server [options]",
-	ArgsUsage:                  "argsusage",
-	Version:                    version.Version,
-	Description:                "Start a chat server",
-	DefaultCommand:             "defaultcommand",
-	Category:                   "service",
-	Flags:                      []cli.Flag{},
-	EnableShellCompletion:      true,
+	Name:                  "server",
+	Aliases:               []string{"serve", "s"},
+	Usage:                 "Start a chat server",
+	UsageText:             "general_ground server [options]",
+	ArgsUsage:             "argsusage",
+	Version:               version.Version,
+	Description:           "Start a chat server",
+	DefaultCommand:        "defaultcommand",
+	Category:              "service",
+	Flags:                 []cli.Flag{},
+	EnableShellCompletion: true,
 	Before: func(ctx context.Context, c *cli.Command) (context.Context, error) {
+		if err := setupEnvironment(); err != nil {
+			slog.Error("Failed to setup environment", "error", err)
+
+			return nil, fmt.Errorf("failed to setup environment: %w", err)
+		}
+
 		setupLogger()
 
 		return ctx, nil
@@ -36,7 +43,10 @@ var Command = &cli.Command{
 }
 
 func execute(ctx context.Context, c *cli.Command) error {
-	instance, err := New()
+	certificateKeyPath := viper.GetString("CERTIFICATE_KEY_PATH")
+	certificatePath := viper.GetString("CERTIFICATE_PATH")
+	
+	instance, err := New(certificatePath, certificateKeyPath)
 	if err != nil {
 		slog.Error("Failed to create server instance", "error", err)
 
@@ -53,14 +63,23 @@ func execute(ctx context.Context, c *cli.Command) error {
 }
 
 func setupLogger() {
-	slog.SetDefault(
-		slog.New(
-			tint.NewHandler(os.Stdout, &tint.Options{
-				AddSource:  true,
-				Level:      slog.LevelDebug,
-				TimeFormat: time.StampMilli,
-				NoColor:    false,
-			}),
-		),
-	)
+	slogHandler := tint.NewHandler(os.Stdout, &tint.Options{
+		AddSource:  true,
+		Level:      slog.LevelDebug,
+		TimeFormat: time.StampMilli,
+	})
+	logger := slog.New(slogHandler)
+
+	slog.SetDefault(logger)
+}
+
+func setupEnvironment() error {
+	viper.SetConfigType("dotenv")
+	viper.SetConfigName(".env")
+	viper.AddConfigPath(".")
+	if err := viper.ReadInConfig(); err != nil {
+		return fmt.Errorf("failed to read environment variables: %w", err)
+	}
+
+	return nil
 }
