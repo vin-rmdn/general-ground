@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_USER: general-ground
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: general-ground
+    ports:
+      - "2001:5432"
+    volumes:
+      - general_ground_postgres:/var/lib/postgresql/data
+
+volumes:
+  general_ground_postgres:

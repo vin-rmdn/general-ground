@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/urfave/cli/v3"
+	"github.com/vin-rmdn/general-ground/cmd/migrate"
 	"github.com/vin-rmdn/general-ground/cmd/server"
 	"github.com/vin-rmdn/general-ground/internal/version"
 )
@@ -20,7 +21,7 @@ func main() {
 		Description:           "Service for a mock chatting platform, complete with a server and a database migration tool, and many other features to come.",
 		DefaultCommand:        "defaultcommand",
 		Category:              "category",
-		Commands:              []*cli.Command{server.Command},
+		Commands:              []*cli.Command{server.Command, migrate.RootCommand},
 		Flags:                 []cli.Flag{},
 		EnableShellCompletion: true,
 		Authors:               []any{"vin-rmdn"},
