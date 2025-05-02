@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
-	"time"
 
-	"github.com/lmittmann/tint"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v3"
 	"github.com/vin-rmdn/general-ground/internal/config"
+	"github.com/vin-rmdn/general-ground/internal/logger"
 	"github.com/vin-rmdn/general-ground/internal/version"
 )
 
@@ -33,7 +31,7 @@ var Command = &cli.Command{
 			return nil, fmt.Errorf("failed to setup environment: %w", err)
 		}
 
-		setupLogger()
+		logger.Setup()
 
 		return ctx, nil
 	},
@@ -61,15 +59,4 @@ func execute(ctx context.Context, c *cli.Command) error {
 	}
 
 	return nil
-}
-
-func setupLogger() {
-	slogHandler := tint.NewHandler(os.Stdout, &tint.Options{
-		AddSource:  true,
-		Level:      slog.LevelDebug,
-		TimeFormat: time.StampMilli,
-	})
-	logger := slog.New(slogHandler)
-
-	slog.SetDefault(logger)
 }
