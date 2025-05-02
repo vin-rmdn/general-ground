@@ -10,6 +10,7 @@ import (
 	"github.com/lmittmann/tint"
 	"github.com/spf13/viper"
 	"github.com/urfave/cli/v3"
+	"github.com/vin-rmdn/general-ground/internal/config"
 	"github.com/vin-rmdn/general-ground/internal/version"
 )
 
@@ -26,7 +27,7 @@ var Command = &cli.Command{
 	Flags:                 []cli.Flag{},
 	EnableShellCompletion: true,
 	Before: func(ctx context.Context, c *cli.Command) (context.Context, error) {
-		if err := setupEnvironment(); err != nil {
+		if err := config.SetupEnvironment(); err != nil {
 			slog.Error("Failed to setup environment", "error", err)
 
 			return nil, fmt.Errorf("failed to setup environment: %w", err)
@@ -45,7 +46,7 @@ var Command = &cli.Command{
 func execute(ctx context.Context, c *cli.Command) error {
 	certificateKeyPath := viper.GetString("CERTIFICATE_KEY_PATH")
 	certificatePath := viper.GetString("CERTIFICATE_PATH")
-	
+
 	instance, err := New(certificatePath, certificateKeyPath)
 	if err != nil {
 		slog.Error("Failed to create server instance", "error", err)
@@ -71,15 +72,4 @@ func setupLogger() {
 	logger := slog.New(slogHandler)
 
 	slog.SetDefault(logger)
-}
-
-func setupEnvironment() error {
-	viper.SetConfigType("dotenv")
-	viper.SetConfigName(".env")
-	viper.AddConfigPath(".")
-	if err := viper.ReadInConfig(); err != nil {
-		return fmt.Errorf("failed to read environment variables: %w", err)
-	}
-
-	return nil
 }
